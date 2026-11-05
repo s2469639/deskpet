@@ -85,7 +85,7 @@ class PetWindow(QWidget):
     def apply_size(self):
         # 72 pixels of character plus transparent headroom for the click hop.
         scale = SIZES[self.options["size"]] / 72
-        self.setFixedSize(round(64 * scale), round(88 * scale))
+        self.setFixedSize(round(72 * scale), round(88 * scale))
         self._pixmap_key = None
 
     def bounds(self, x, y):

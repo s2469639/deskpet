@@ -9,7 +9,7 @@ from PySide6.QtGui import QMouseEvent
 from PySide6.QtTest import QTest
 from PySide6.QtWidgets import QApplication
 from deskpet.app import PetWindow
-from deskpet.art import POSES, draw_frame
+from deskpet.art import CANVAS, FRONT, SIDE, POSES, draw_frame, source_pose
 from deskpet.settings import load
 
 app = QApplication.instance() or QApplication([])
@@ -35,11 +35,31 @@ class GuiTests(unittest.TestCase):
         for pose, count in POSES.items():
             for index in range(count):
                 image = draw_frame(pose, index)
-                self.assertEqual((image.width(), image.height()), (64, 88))
+                self.assertEqual((image.width(), image.height()), CANVAS)
                 self.assertEqual(image.pixelColor(0, 0).alpha(), 0)
-                self.assertGreater(image.pixelColor(32, 35).alpha(), 0)
+                self.assertGreater(image.pixelColor(128, 140).alpha(), 0)
         self.assertFalse(self.pet.mask().contains(QPoint(0, 0)))
         self.assertTrue(self.pet.mask().contains(QPoint(self.pet.width() // 2, self.pet.height() // 2)))
+
+    def test_source_is_exact_uploaded_artwork(self):
+        from deskpet.art import asset_root
+        root = Path(__file__).resolve().parent.parent
+        self.assertEqual((asset_root() / "mandu-reference.png").read_bytes(),
+                         (root / "1.png").read_bytes())
+        from PySide6.QtGui import QImage
+        original = QImage(str(root / "1.png"))
+        self.assertEqual(source_pose(False), original.copy(FRONT))
+        self.assertEqual(source_pose(True), original.copy(SIDE))
+
+    def test_blink_preserves_glasses_and_returns_to_original_face(self):
+        opened = draw_frame("idle", 0)
+        closed = draw_frame("idle", 5)
+        self.assertNotEqual(opened, closed)
+        # Blink affects only the eyes; lower glasses rims, mouth and body stay exact.
+        from PySide6.QtCore import QRect
+        lower = QRect(0, 225, CANVAS[0], CANVAS[1] - 225)
+        self.assertEqual(opened.copy(lower), closed.copy(lower))
+        self.assertEqual(opened, draw_frame("idle", 0))
 
     def test_click_reacts_then_returns_to_front(self):
         QTest.mouseClick(self.pet, Qt.MouseButton.LeftButton, pos=self.pet.rect().center())
