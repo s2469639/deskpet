@@ -1,4 +1,7 @@
-.venv/
+# Local Python environments (including .venv312 and backups)
+.venv*/
+venv/
+env/
 __pycache__/
 *.pyc
 build/
